@@ -45,7 +45,7 @@ import kidWomenBagWhiteFull from '../assets/kidWear/kidWomenWear/kidWomenBagWhit
 import whiteHoodieFull from '../assets/mensWear/wHoodieFull.png';
 import skyHoodieFull from '../assets/mensWear/sHoodieFull.png';
 import whiteHeelFull from '../assets/womensWear/whiteHeelFull.png';
-import skyHeelFull from '../assets/womenswear/skyHeelFull.png';
+import skyHeelFull from '../assets/womensWear/skyHeelFull.png';
 import lovarySareeFull from '../assets/womensWear/lovarySareeFull.png';
 import pinkSareeFull from '../assets/womensWear/pinkSareeFull.png';
 import whiteShowlFull from '../assets/womensWear/whiteShowlFull.png';
