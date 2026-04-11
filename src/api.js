@@ -1,4 +1,4 @@
-const API_URL = 'https://ecommerce-backend-psi-flax-75.vercel.app';
+const API_URL = import.meta.env.VITE_API_URL || 'https://ecommerce-backend-psi-flax-75.vercel.app';
 
 /**
  * Helper function to handle fetch responses and common headers

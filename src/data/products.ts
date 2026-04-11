@@ -55,7 +55,7 @@ import { Product } from '../types';
 export const products: Product[] = [
   {
     id: '1',
-    name: 'The Atelier Oxford Shirt',
+    name: ' ',
     price: 220,
     category: 'Men',
     type: 'Shirt',

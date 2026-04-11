@@ -16,6 +16,7 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (searchParams.get('signup')) {
+
       setIsLogin(false);
     }
   }, [searchParams]);
