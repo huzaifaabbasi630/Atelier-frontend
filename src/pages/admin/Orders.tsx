@@ -24,11 +24,18 @@ const Orders: React.FC = () => {
   const { orders, updateOrderStatus } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [statusFilter, setStatusFilter] = useState('All');
 
-  const filteredOrders = orders.filter(o => 
-    o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOrders = orders.filter(o => {
+    const matchesSearch = o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (statusFilter === 'All') return matchesSearch;
+    if (statusFilter === 'Pending') return matchesSearch && o.status === 'Pending';
+    if (statusFilter === 'Completed') return matchesSearch && (o.status === 'Delivered');
+    if (statusFilter === 'Cancelled') return matchesSearch && o.status === 'Cancelled';
+    return matchesSearch;
+  });
 
   const getStatusColor = (status: Order['status']) => {
     switch(status) {
@@ -36,6 +43,7 @@ const Orders: React.FC = () => {
        case 'Confirmed': return 'bg-blue-500/10 text-blue-600 border-blue-200';
        case 'Shipped': return 'bg-indigo-500/10 text-indigo-600 border-indigo-200';
        case 'Delivered': return 'bg-green-500/10 text-green-600 border-green-200';
+       case 'Cancelled': return 'bg-red-500/10 text-red-600 border-red-200';
        default: return 'bg-gray-100 text-gray-500';
     }
   };
@@ -46,6 +54,7 @@ const Orders: React.FC = () => {
        case 'Confirmed': return CheckCircle2;
        case 'Shipped': return Truck;
        case 'Delivered': return CheckCircle2;
+       case 'Cancelled': return X;
        default: return Package;
     }
   };
@@ -59,11 +68,12 @@ const Orders: React.FC = () => {
                <p className="text-gray-400 capitalize tracking-[0.2em] text-[10px] font-bold">Managing your luxury requests</p>
             </div>
             <div className="flex bg-white luxury-shadow rounded-2xl p-1.5 border border-gray-100">
-               {['All', 'Pending', 'Confirmed', 'Shipped'].map((tab) => (
+               {['All', 'Pending', 'Completed', 'Cancelled'].map((tab) => (
                  <button 
                    key={tab}
+                   onClick={() => setStatusFilter(tab)}
                    className={`px-8 py-3 rounded-xl text-xs font-bold transition-all duration-300 ${
-                     tab === 'All' ? 'bg-brand-black text-white shadow-lg' : 'text-gray-400 hover:text-brand-black'
+                     tab === statusFilter ? 'bg-brand-black text-white shadow-lg' : 'text-gray-400 hover:text-brand-black'
                    }`}
                  >
                    {tab}
@@ -144,7 +154,7 @@ const Orders: React.FC = () => {
                                    <MoreVertical className="w-4 h-4" />
                                  </button>
                                  <div className="absolute right-0 top-full mt-2 w-48 bg-white luxury-shadow rounded-2xl p-2 border border-gray-100 hidden group-hover/menu:block z-10 animate-in fade-in slide-in-from-top-4 duration-300">
-                                   {['Pending', 'Confirmed', 'Shipped', 'Delivered'].map((status) => (
+                                   {['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'].map((status) => (
                                      <button 
                                        key={status}
                                        onClick={() => updateOrderStatus(order.id, status as any)}

@@ -1,37 +1,8 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, Order } from '../types';
 import { products as defaultProducts } from '../data/products';
 
-const defaultOrders: Order[] = [
-  {
-    id: 'ORD-7721',
-    customerName: 'Marcus Aurelius',
-    customerEmail: 'marcus@romanempire.com',
-    address: 'Via Appia Antica, 1, Rome, Italy',
-    phone: '+39 02 1234 5678',
-    postalCode: '00100',
-    items: [
-      { id: '1', name: 'Silk Tailored Blazer', category: 'Suits', price: 1200, quantity: 1, color: 'Midnight Black', size: 'Medium', image: 'https://images.unsplash.com/photo-1594932224491-99419519cd1d?q=80&w=200' }
-    ],
-    total: 1200,
-    status: 'Confirmed',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'ORD-8842',
-    customerName: 'Isabella d\'Este',
-    customerEmail: 'isabella@mantua.it',
-    address: 'Castello di San Giorgio, Mantua, Italy',
-    phone: '+39 03 1234 5678',
-    postalCode: '46100',
-    items: [
-      { id: '2', name: 'Velveteen Evening Bag', category: 'Handbags', price: 850, quantity: 1, color: 'Tuscany Red', size: 'One Size', image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=200' }
-    ],
-    total: 850,
-    status: 'Pending',
-    createdAt: new Date().toISOString()
-  }
-];
+const defaultOrders: Order[] = [];
 
 export interface AdminConfig {
   logoText: string;
@@ -263,6 +234,47 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     return defaultOrders;
   });
+
+  // Fetch orders from backend on mount
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch('https://ecommerce-backend-psi-flax-75.vercel.app/orders', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const backendOrders = data.orders || [];
+          
+          // Transform backend orders to match Order type
+          const transformedOrders = backendOrders.map((o: any) => ({
+            id: o.id,
+            customerName: o.customerName || 'Unknown',
+            customerEmail: o.customerEmail,
+            address: o.shippingAddress?.address || '',
+            phone: o.shippingAddress?.phone || '',
+            postalCode: o.shippingAddress?.postalCode || '',
+            items: o.items || [],
+            total: o.totalAmount || 0,
+            status: o.status?.charAt(0).toUpperCase() + o.status?.slice(1).toLowerCase() || 'Pending',
+            createdAt: o.createdAt
+          }));
+          
+          setOrders(transformedOrders);
+          localStorage.setItem('atelier_orders', JSON.stringify(transformedOrders));
+        }
+      } catch (error) {
+        console.error('Failed to fetch orders:', error);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const updateConfig = (newConfig: Partial<AdminConfig>) => {
     setConfig(prev => {

@@ -25,6 +25,27 @@ const Dashboard: React.FC = () => {
   const { products, orders, updateOrderStatus } = useAdmin();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  // Calculate Last Month Stats
+  const getLastMonthStats = () => {
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const lastMonthOrders = orders.filter(o => {
+      const orderDate = new Date(o.createdAt);
+      return orderDate >= lastMonth && orderDate <= lastMonthEnd;
+    });
+
+    const completedOrders = lastMonthOrders.filter(o => o.status === 'Delivered').length;
+    const pendingOrders = lastMonthOrders.filter(o => o.status === 'Pending').length;
+    const cancelledOrders = lastMonthOrders.filter(o => o.status === 'Cancelled').length;
+    const totalRevenue = lastMonthOrders.reduce((sum, o) => sum + o.total, 0);
+
+    return { completedOrders, pendingOrders, cancelledOrders, totalRevenue, count: lastMonthOrders.length };
+  };
+
+  const lastMonthStats = getLastMonthStats();
+
   // Real Stats Calculation
   const stats = [
     { 
@@ -116,6 +137,72 @@ const Dashboard: React.FC = () => {
               </motion.div>
             );
           })}
+        </section>
+
+        {/* Last Month Sale Stats */}
+        <section className="bg-gradient-to-br from-brand-black to-gray-900 rounded-[2.5rem] luxury-shadow p-10 lg:p-14 text-white">
+          <div className="mb-10">
+            <h2 className="text-3xl font-serif tracking-tight mb-2">Last Month Performance</h2>
+            <p className="text-gray-400 text-[10px] uppercase tracking-widest font-bold">Comprehensive sales analytics</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Total Revenue */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-brand-gold/50 transition-all duration-500">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <p className="text-[10px] text-gray-300 uppercase tracking-widest font-bold mb-2">Total Revenue</p>
+                  <h3 className="text-3xl font-serif">${lastMonthStats.totalRevenue.toLocaleString()}</h3>
+                </div>
+                <div className="w-12 h-12 bg-brand-gold/20 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-brand-gold" />
+                </div>
+              </div>
+              <p className="text-[9px] text-gray-400">Generated from {lastMonthStats.count} orders</p>
+            </div>
+
+            {/* Completed Orders */}
+            <div className="bg-green-500/20 backdrop-blur-sm rounded-2xl p-6 border border-green-500/30 hover:border-green-400/50 transition-all duration-500">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <p className="text-[10px] text-green-200 uppercase tracking-widest font-bold mb-2">Completed Orders</p>
+                  <h3 className="text-3xl font-serif">{lastMonthStats.completedOrders}</h3>
+                </div>
+                <div className="w-12 h-12 bg-green-500/30 rounded-xl flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-green-400" />
+                </div>
+              </div>
+              <p className="text-[9px] text-green-300">Successfully delivered</p>
+            </div>
+
+            {/* Pending Orders */}
+            <div className="bg-amber-500/20 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/30 hover:border-amber-400/50 transition-all duration-500">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <p className="text-[10px] text-amber-200 uppercase tracking-widest font-bold mb-2">Pending Orders</p>
+                  <h3 className="text-3xl font-serif">{lastMonthStats.pendingOrders}</h3>
+                </div>
+                <div className="w-12 h-12 bg-amber-500/30 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-amber-400" />
+                </div>
+              </div>
+              <p className="text-[9px] text-amber-300">Awaiting confirmation</p>
+            </div>
+
+            {/* Cancelled Orders */}
+            <div className="bg-red-500/20 backdrop-blur-sm rounded-2xl p-6 border border-red-500/30 hover:border-red-400/50 transition-all duration-500">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <p className="text-[10px] text-red-200 uppercase tracking-widest font-bold mb-2">Cancelled Orders</p>
+                  <h3 className="text-3xl font-serif">{lastMonthStats.cancelledOrders}</h3>
+                </div>
+                <div className="w-12 h-12 bg-red-500/30 rounded-xl flex items-center justify-center">
+                  <X className="w-6 h-6 text-red-400" />
+                </div>
+              </div>
+              <p className="text-[9px] text-red-300">Cancelled or refunded</p>
+            </div>
+          </div>
         </section>
 
         <section className="grid grid-cols-1 gap-8">

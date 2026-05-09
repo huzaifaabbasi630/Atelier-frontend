@@ -59,6 +59,6 @@ export interface Order {
   postalCode: string;
   items: OrderItem[];
   total: number;
-  status: 'Pending' | 'Confirmed' | 'Shipped' | 'Delivered';
+  status: 'Pending' | 'Confirmed' | 'Shipped' | 'Delivered' | 'Cancelled';
   createdAt: string;
 }
