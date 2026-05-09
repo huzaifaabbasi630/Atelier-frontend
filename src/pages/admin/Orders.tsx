@@ -221,6 +221,8 @@ const Orders: React.FC = () => {
                            <div>
                               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Delivery Destination</p>
                               <p className="text-sm font-medium text-gray-600 leading-relaxed">{selectedOrder.address}</p>
+                              <p className="text-sm font-medium text-gray-600 mt-1">{selectedOrder.postalCode}</p>
+                              <p className="text-sm font-medium text-gray-600 mt-1">{selectedOrder.phone}</p>
                            </div>
                         </div>
                      </div>
@@ -250,7 +252,11 @@ const Orders: React.FC = () => {
                         </div>
                         <div className="flex-1">
                            <h4 className="text-sm font-bold text-gray-900">{item.name}</h4>
-                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Quantity: {item.quantity}</p>
+                           <div className="mt-2 space-y-1">
+                             {item.color && <p className="text-[10px] text-gray-500 font-medium">Color: <span className="text-gray-700 font-bold">{item.color}</span></p>}
+                             {item.size && <p className="text-[10px] text-gray-500 font-medium">Size: <span className="text-gray-700 font-bold">{item.size}</span></p>}
+                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Quantity: {item.quantity}</p>
+                           </div>
                         </div>
                         <div className="text-right">
                            <p className="text-sm font-bold text-gray-900">${item.price}</p>
