@@ -152,6 +152,16 @@ export const updateAdminHomepage = async (configData) => {
   });
 };
 
+/**
+ * Update Order - PUT /orders/:id
+ */
+export const updateOrder = async (id, orderData) => {
+  return await apiFetch(`/orders/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(orderData),
+  });
+};
+
 export const logoutUser = () => {
   localStorage.removeItem('authToken');
   window.location.href = '/login';
