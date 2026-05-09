@@ -259,7 +259,16 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             address: o.shippingAddress?.address || '',
             phone: o.shippingAddress?.phone || '',
             postalCode: o.shippingAddress?.postalCode || '',
-            items: o.items || [],
+            items: o.items.map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              category: item.category || 'General',
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image || '',
+              color: item.color || '',
+              size: item.size || ''
+            })) || [],
             total: o.totalAmount || 0,
             status: o.status?.charAt(0).toUpperCase() + o.status?.slice(1).toLowerCase() || 'Pending',
             createdAt: o.createdAt

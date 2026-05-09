@@ -52,15 +52,19 @@ const Checkout: React.FC = () => {
     const orderPayload = {
       customerName: deliveryData.fullName,
       customerEmail: user?.email || 'guest@atelier.com',
-      shippingAddress: `${deliveryData.address}, ${deliveryData.postalCode}`,
-      phone: deliveryData.phone,
+      shippingAddress: {
+        address: deliveryData.address,
+        postalCode: deliveryData.postalCode,
+        phone: deliveryData.phone
+      },
       items: cart.map(item => ({
         id: item.id,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
         color: item.selectedColor || item.color,
-        size: item.selectedSize || 'Standard'
+        size: item.selectedSize || 'Standard',
+        image: item.images?.[0] || item.image || ''
       })),
       totalAmount: cartTotal + shipping + tax,
       paymentMethod: 'Credit Card' // Default for now
