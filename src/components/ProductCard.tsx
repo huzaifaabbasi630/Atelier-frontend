@@ -42,7 +42,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     product.featured ? 'Trending' : product.rating >= 4.8 ? 'Best Seller' : null,
   ].filter(Boolean) as string[];
 
-  const isOutOfStock = product.stock === 0;
+  const isOutOfStock = product.stock !== undefined && Number(product.stock) <= 0;
 
   return (
     <motion.div

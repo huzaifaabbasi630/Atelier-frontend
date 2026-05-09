@@ -95,18 +95,9 @@ const Products: React.FC = () => {
     e.preventDefault();
     
     if (editingProduct) {
-      const updatedProducts = products.map(p => 
-        p.id === editingProduct.id ? { ...p, ...formData } as Product : p
-      );
-      updateProducts(updatedProducts);
+      updateProductInDB(editingProduct.id, formData);
     } else {
-      const newProduct: Product = {
-        ...formData,
-        id: `PROD-${Math.floor(Math.random() * 10000)}`,
-        rating: formData.rating || 5,
-        reviews: formData.reviews || []
-      } as Product;
-      updateProducts([newProduct, ...products]);
+      addProductInDB(formData as any);
     }
     
     handleCloseModal();
@@ -114,7 +105,7 @@ const Products: React.FC = () => {
 
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to remove this exquisite piece from your collection?')) {
-      updateProducts(products.filter(p => p.id !== id));
+      deleteProductFromDB(id);
     }
   };
 

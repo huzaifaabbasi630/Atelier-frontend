@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, Order } from '../types';
 import { products as defaultProducts } from '../data/products';
+import { getProducts, addProduct, updateProduct, deleteProduct, getAdminHomepage, updateAdminHomepage, getOrders, updateOrder } from '../api';
 
 const defaultOrders: Order[] = [];
 
+// ... [AdminConfig and AdminContextType stay the same]
 export interface AdminConfig {
   logoText: string;
   logoImage: string;
@@ -97,15 +99,19 @@ export interface AdminConfig {
 
 export interface AdminContextType {
   config: AdminConfig;
-  updateConfig: (newConfig: Partial<AdminConfig>) => void;
+  updateConfig: (newConfig: Partial<AdminConfig>) => Promise<void>;
   products: Product[];
-  updateProducts: (products: Product[]) => void;
+  addProductInDB: (product: Omit<Product, 'id'>) => Promise<void>;
+  updateProductInDB: (id: string, product: Partial<Product>) => Promise<void>;
+  deleteProductFromDB: (id: string) => Promise<void>;
+  updateProducts: (products: Product[]) => void; // Keeping for compatibility but favoring individual methods
   orders: Order[];
-  updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   addOrder: (order: Order) => void;
 }
 
 const defaultConfig: AdminConfig = {
+  // ... [keep default config as it is]
   logoText: 'Atelier',
   logoImage: '',
   heroTagline: 'Spring Summer 2026',
@@ -201,96 +207,102 @@ export const AdminContext = createContext<AdminContextType | undefined>(undefine
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<AdminConfig>(() => {
     const saved = localStorage.getItem('atelier_config');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse atelier_config', e);
-      }
-    }
-    return defaultConfig;
+    return saved ? JSON.parse(saved) : defaultConfig;
   });
 
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('atelier_products');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse atelier_products', e);
-      }
-    }
-    return defaultProducts;
+    return saved ? JSON.parse(saved) : defaultProducts;
   });
 
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem('atelier_orders');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse atelier_orders', e);
-      }
-    }
-    return defaultOrders;
+    return saved ? JSON.parse(saved) : defaultOrders;
   });
 
-  // Fetch orders from backend on mount
+  // Fetch all data from backend on mount
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('https://ecommerce-backend-psi-flax-75.vercel.app/orders', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const backendOrders = data.orders || [];
-          
-          // Transform backend orders to match Order type
-          const transformedOrders = backendOrders.map((o: any) => ({
-            id: o.id,
-            customerName: o.customerName || 'Unknown',
-            customerEmail: o.customerEmail,
-            address: o.shippingAddress?.address || '',
-            phone: o.shippingAddress?.phone || '',
-            postalCode: o.shippingAddress?.postalCode || '',
-            items: o.items.map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              category: item.category || 'General',
-              price: item.price,
-              quantity: item.quantity,
-              image: item.image || '',
-              color: item.color || '',
-              size: item.size || ''
-            })) || [],
-            total: o.totalAmount || 0,
-            status: o.status?.charAt(0).toUpperCase() + o.status?.slice(1).toLowerCase() || 'Pending',
-            createdAt: o.createdAt
-          }));
-          
-          setOrders(transformedOrders);
-          localStorage.setItem('atelier_orders', JSON.stringify(transformedOrders));
+        // Fetch Orders
+        const ordersData = await getOrders();
+        const transformedOrders = (ordersData.orders || []).map((o: any) => ({
+          id: o.id,
+          customerName: o.customerName || 'Unknown',
+          customerEmail: o.customerEmail,
+          address: o.shippingAddress?.address || '',
+          phone: o.shippingAddress?.phone || '',
+          postalCode: o.shippingAddress?.postalCode || '',
+          items: o.items || [],
+          total: o.totalAmount || 0,
+          status: o.status || 'Pending',
+          createdAt: o.createdAt
+        }));
+        setOrders(transformedOrders);
+        localStorage.setItem('atelier_orders', JSON.stringify(transformedOrders));
+
+        // Fetch Products
+        const productsData = await getProducts();
+        if (productsData.products && productsData.products.length > 0) {
+          setProducts(productsData.products);
+          localStorage.setItem('atelier_products', JSON.stringify(productsData.products));
+        }
+
+        // Fetch Config
+        const configData = await getAdminHomepage();
+        if (configData && Object.keys(configData).length > 1) {
+          setConfig(prev => ({ ...prev, ...configData }));
+          localStorage.setItem('atelier_config', JSON.stringify({ ...config, ...configData }));
         }
       } catch (error) {
-        console.error('Failed to fetch orders:', error);
+        console.error('Failed to fetch data from backend:', error);
       }
     };
 
-    fetchOrders();
+    fetchData();
   }, []);
 
-  const updateConfig = (newConfig: Partial<AdminConfig>) => {
-    setConfig(prev => {
-      const updated = { ...prev, ...newConfig };
+  const updateConfig = async (newConfig: Partial<AdminConfig>) => {
+    try {
+      const updated = { ...config, ...newConfig };
+      setConfig(updated);
       localStorage.setItem('atelier_config', JSON.stringify(updated));
-      return updated;
-    });
+      await updateAdminHomepage(newConfig);
+    } catch (error) {
+      console.error('Failed to update config on backend:', error);
+    }
+  };
+
+  const addProductInDB = async (product: Omit<Product, 'id'>) => {
+    try {
+      const newProd = await addProduct(product);
+      setProducts(prev => [newProd, ...prev]);
+      localStorage.setItem('atelier_products', JSON.stringify([newProd, ...products]));
+    } catch (error) {
+      console.error('Failed to add product:', error);
+    }
+  };
+
+  const updateProductInDB = async (id: string, product: Partial<Product>) => {
+    try {
+      const updated = await updateProduct(id, product);
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+      const latestProducts = products.map(p => p.id === id ? { ...p, ...updated } : p);
+      localStorage.setItem('atelier_products', JSON.stringify(latestProducts));
+    } catch (error) {
+      console.error('Failed to update product:', error);
+    }
+  };
+
+  const deleteProductFromDB = async (id: string) => {
+    try {
+      await deleteProduct(id);
+      setProducts(prev => prev.filter(p => p.id !== id));
+      const latestProducts = products.filter(p => p.id !== id);
+      localStorage.setItem('atelier_products', JSON.stringify(latestProducts));
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+    }
   };
 
   const updateProducts = (newProducts: Product[]) => {
@@ -298,28 +310,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('atelier_products', JSON.stringify(newProducts));
   };
 
-  const updateOrderStatus = (orderId: string, status: Order['status']) => {
-    setOrders(prev => {
-      // Re-read from localStorage to get the most up-to-date state (prev might be stale in other tabs)
-      const latest = JSON.parse(localStorage.getItem('atelier_orders') || '[]');
-      const currentList = latest.length > 0 ? latest : prev;
-      
-      const updated = currentList.map((o: Order) => o.id === orderId ? { ...o, status } : o);
-      localStorage.setItem('atelier_orders', JSON.stringify(updated));
-      return updated;
-    });
+  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+    try {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+      await updateOrder(orderId, { status });
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+    }
   };
 
   const addOrder = (order: Order) => {
-    setOrders(prev => {
-      // Re-read from localStorage to ensure we don't lose updates from other tabs
-      const latest = JSON.parse(localStorage.getItem('atelier_orders') || '[]');
-      const currentList = latest.length > 0 ? latest : prev;
-      
-      const updated = [order, ...currentList];
-      localStorage.setItem('atelier_orders', JSON.stringify(updated));
-      return updated;
-    });
+    setOrders(prev => [order, ...prev]);
   };
 
   return (
@@ -328,6 +329,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         config, 
         updateConfig, 
         products, 
+        addProductInDB,
+        updateProductInDB,
+        deleteProductFromDB,
         updateProducts, 
         orders, 
         updateOrderStatus,

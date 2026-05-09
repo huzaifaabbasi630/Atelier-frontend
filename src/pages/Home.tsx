@@ -41,7 +41,8 @@ const Home: React.FC = () => {
   const [submittedReviews, setSubmittedReviews] = useState<{ name: string; text: string }[]>([]);
   const { user } = useAuth();
   const { addToCart } = useCart();
-  const { config } = useAdmin();
+  const { config, products: adminProducts } = useAdmin();
+  const sourceProducts = adminProducts.length ? adminProducts : products;
 
   const categories = [
     { name: 'Men',   label: config.catMenLabel   || 'Men',       image: menImpor   },
@@ -73,7 +74,7 @@ const Home: React.FC = () => {
     ...submittedReviews,
   ];
 
-  const newArrivals = products.slice(1, 5);
+  const newArrivals = sourceProducts.slice(1, 5);
 
   return (
     <div className="overflow-hidden bg-white text-slate-950">

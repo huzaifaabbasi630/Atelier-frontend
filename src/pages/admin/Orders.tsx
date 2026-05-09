@@ -15,16 +15,23 @@ import {
   Eye,
   ArrowUpDown,
   Filter,
-  X
+  X,
+  Mail,
+  Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Order } from '../../types';
+import { sendOrderEmail } from '../../api';
 
 const Orders: React.FC = () => {
   const { orders, updateOrderStatus } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailFormData, setEmailFormData] = useState({ deliveryDays: '5', status: 'Confirmed' });
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailMessage, setEmailMessage] = useState('');
 
   const filteredOrders = orders.filter(o => {
     const matchesSearch = o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,6 +63,27 @@ const Orders: React.FC = () => {
        case 'Delivered': return CheckCircle2;
        case 'Cancelled': return X;
        default: return Package;
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!selectedOrder) return;
+    
+    setEmailLoading(true);
+    setEmailMessage('');
+    
+    try {
+      await sendOrderEmail(selectedOrder.id, emailFormData.deliveryDays, emailFormData.status);
+      setEmailMessage('✅ Email sent successfully!');
+      setTimeout(() => {
+        setShowEmailModal(false);
+        setEmailMessage('');
+        setEmailFormData({ deliveryDays: '5', status: 'Confirmed' });
+      }, 2000);
+    } catch (error) {
+      setEmailMessage('❌ Failed to send email: ' + (error as any).message);
+    } finally {
+      setEmailLoading(false);
     }
   };
 
@@ -163,6 +191,17 @@ const Orders: React.FC = () => {
                                        <span>Mark as {status}</span>
                                      </button>
                                    ))}
+                                   <div className="border-t border-gray-100 my-2"></div>
+                                   <button 
+                                     onClick={() => {
+                                       setSelectedOrder(order);
+                                       setShowEmailModal(true);
+                                     }}
+                                     className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:bg-blue-50 transition-all"
+                                   >
+                                     <Mail className="w-4 h-4" />
+                                     <span>Send Email</span>
+                                   </button>
                                  </div>
                                </div>
                             </div>
@@ -268,6 +307,97 @@ const Orders: React.FC = () => {
               </motion.div>
             </div>
           )}
+       </AnimatePresence>
+
+       {/* Email Modal */}
+       <AnimatePresence>
+         {showEmailModal && selectedOrder && (
+           <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-brand-black/60 backdrop-blur-md">
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+               className="bg-white w-full max-w-md overflow-hidden rounded-[2.5rem] shadow-2xl border border-gray-100"
+             >
+               <div className="p-8 space-y-8">
+                 <div className="flex items-center justify-between">
+                   <div className="space-y-1">
+                     <h3 className="text-2xl font-serif text-brand-black">Dispatch Notice</h3>
+                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Configure dispatch details for #{selectedOrder.id}</p>
+                   </div>
+                   <button 
+                     onClick={() => setShowEmailModal(false)}
+                     className="p-3 bg-gray-50 rounded-xl text-gray-400 hover:text-red-500 transition-colors"
+                   >
+                     <X className="w-5 h-5" />
+                   </button>
+                 </div>
+
+                 <div className="space-y-6">
+                   <div className="space-y-3">
+                     <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1">Order Status</label>
+                     <div className="grid grid-cols-2 gap-3">
+                       {['Confirmed', 'Cancelled'].map((s) => (
+                         <button
+                           key={s}
+                           onClick={() => setEmailFormData(prev => ({ ...prev, status: s }))}
+                           className={`py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border ${
+                             emailFormData.status === s 
+                               ? s === 'Confirmed' ? 'bg-brand-black text-white border-brand-black shadow-lg' : 'bg-red-600 text-white border-red-600 shadow-lg'
+                               : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                           }`}
+                         >
+                           {s}
+                         </button>
+                       ))}
+                     </div>
+                   </div>
+
+                   <div className="space-y-3">
+                     <label className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1">Estimated Delivery Days</label>
+                     <div className="relative">
+                       <Truck className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                       <input 
+                         type="number"
+                         placeholder="Ex: 5"
+                         className="w-full pl-14 pr-6 py-4 bg-gray-50 border-none rounded-2xl outline-none text-sm font-bold text-gray-900 focus:ring-2 focus:ring-brand-gold transition-all"
+                         value={emailFormData.deliveryDays}
+                         onChange={(e) => setEmailFormData(prev => ({ ...prev, deliveryDays: e.target.value }))}
+                       />
+                     </div>
+                   </div>
+
+                   {emailMessage && (
+                     <motion.div 
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       className={`p-4 rounded-2xl text-xs font-bold text-center ${emailMessage.includes('✅') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}
+                     >
+                       {emailMessage}
+                     </motion.div>
+                   )}
+
+                   <button
+                     onClick={handleSendEmail}
+                     disabled={emailLoading}
+                     className="w-full group relative overflow-hidden bg-brand-black text-white py-5 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs shadow-xl hover:shadow-2xl transition-all disabled:opacity-50"
+                   >
+                     <span className="relative z-10 flex items-center justify-center space-x-3">
+                       {emailLoading ? (
+                         <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                       ) : (
+                         <>
+                           <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                           <span>Transmit Courier Notice</span>
+                         </>
+                       )}
+                     </span>
+                   </button>
+                 </div>
+               </div>
+             </motion.div>
+           </div>
+         )}
        </AnimatePresence>
     </AdminLayout>
   );

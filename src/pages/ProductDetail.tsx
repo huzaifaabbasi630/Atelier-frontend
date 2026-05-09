@@ -180,22 +180,22 @@ const ProductDetail: React.FC = () => {
             <div className="space-y-6">
               <div className="flex flex-wrap items-center gap-4 relative">
                 <div className="flex items-center gap-4 rounded-full border border-slate-200 bg-slate-50 px-4 py-3">
-                  <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="text-xl text-slate-900" disabled={product.stock === 0}>-</button>
+                  <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="text-xl text-slate-900" disabled={product.stock !== undefined && Number(product.stock) <= 0}>-</button>
                   <span className="min-w-[36px] text-center text-sm font-medium">{quantity}</span>
-                  <button onClick={() => setQuantity((q) => q + 1)} className="text-xl text-slate-900" disabled={product.stock === 0}>+</button>
+                  <button onClick={() => setQuantity((q) => q + 1)} className="text-xl text-slate-900" disabled={product.stock !== undefined && Number(product.stock) <= 0}>+</button>
                 </div>
                 
                 <div className="relative group/cart">
                   <button
-                    disabled={product.stock === 0}
+                    disabled={product.stock !== undefined && Number(product.stock) <= 0}
                     onClick={() => addToCart(product, quantity, selectedSize, selectedColor)}
-                    className={`inline-flex items-center gap-3 rounded-full px-8 py-4 text-sm uppercase tracking-[0.35em] transition ${product.stock === 0 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+                    className={`inline-flex items-center gap-3 rounded-full px-8 py-4 text-sm uppercase tracking-[0.35em] transition ${product.stock !== undefined && Number(product.stock) <= 0 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
                   >
                     <ShoppingBag className="w-4 h-4" />
-                    {product.stock === 0 ? 'Sold Out' : 'Add to Cart'}
+                    {product.stock !== undefined && Number(product.stock) <= 0 ? 'Sold Out' : 'Add to Cart'}
                   </button>
 
-                  {product.stock === 0 && (
+                  {(product.stock !== undefined && Number(product.stock) <= 0) && (
                     <motion.div 
                       initial={{ scale: 0.8, opacity: 0, rotate: -15 }}
                       animate={{ scale: 1, opacity: 1, rotate: -15 }}
