@@ -11,12 +11,12 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [wishlist, setWishlist] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('atelier_wishlist');
+    const saved = sessionStorage.getItem('atelier_wishlist');
     return saved ? JSON.parse(saved) : [];
   });
 
   useEffect(() => {
-    localStorage.setItem('atelier_wishlist', JSON.stringify(wishlist));
+    sessionStorage.setItem('atelier_wishlist', JSON.stringify(wishlist));
   }, [wishlist]);
 
   const toggleWishlist = (product: Product) => {

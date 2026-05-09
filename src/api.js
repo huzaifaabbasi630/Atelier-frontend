@@ -14,6 +14,7 @@ const apiFetch = async (endpoint, options = {}) => {
   const url = `${API_URL}${endpoint}`;
 
   try {
+    console.log(`[API Request] ${options.method || 'GET'} ${url}`);
     const response = await fetch(url, {
       ...options,
       headers: { ...defaultHeaders, ...options.headers },
@@ -36,7 +37,7 @@ const apiFetch = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    console.error(`[API Error] ${endpoint}:`, error.message);
+    console.error(`[API Network/Logic Error] ${url}:`, error);
     throw error;
   }
 };
@@ -164,5 +165,11 @@ export const updateOrder = async (id, orderData) => {
 
 export const logoutUser = () => {
   localStorage.removeItem('authToken');
+  // Clear all atelier related keys
+  [localStorage, sessionStorage].forEach(storage => {
+    Object.keys(storage).forEach(key => {
+      if (key.startsWith('atelier')) storage.removeItem(key);
+    });
+  });
   window.location.href = '/login';
 };

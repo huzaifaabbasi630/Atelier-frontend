@@ -205,20 +205,9 @@ const defaultConfig: AdminConfig = {
 export const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<AdminConfig>(() => {
-    const saved = localStorage.getItem('atelier_config');
-    return saved ? JSON.parse(saved) : defaultConfig;
-  });
-
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('atelier_products');
-    return saved ? JSON.parse(saved) : defaultProducts;
-  });
-
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('atelier_orders');
-    return saved ? JSON.parse(saved) : defaultOrders;
-  });
+  const [config, setConfig] = useState<AdminConfig>(defaultConfig);
+  const [products, setProducts] = useState<Product[]>(defaultProducts);
+  const [orders, setOrders] = useState<Order[]>(defaultOrders);
 
   // Fetch all data from backend on mount
   useEffect(() => {
@@ -239,20 +228,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           createdAt: o.createdAt
         }));
         setOrders(transformedOrders);
-        localStorage.setItem('atelier_orders', JSON.stringify(transformedOrders));
 
         // Fetch Products
         const productsData = await getProducts();
         if (productsData.products && productsData.products.length > 0) {
           setProducts(productsData.products);
-          localStorage.setItem('atelier_products', JSON.stringify(productsData.products));
         }
 
         // Fetch Config
         const configData = await getAdminHomepage();
         if (configData && Object.keys(configData).length > 1) {
           setConfig(prev => ({ ...prev, ...configData }));
-          localStorage.setItem('atelier_config', JSON.stringify({ ...config, ...configData }));
         }
       } catch (error) {
         console.error('Failed to fetch data from backend:', error);
@@ -266,7 +252,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const updated = { ...config, ...newConfig };
       setConfig(updated);
-      localStorage.setItem('atelier_config', JSON.stringify(updated));
       await updateAdminHomepage(newConfig);
     } catch (error) {
       console.error('Failed to update config on backend:', error);
@@ -277,7 +262,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const newProd = await addProduct(product);
       setProducts(prev => [newProd, ...prev]);
-      localStorage.setItem('atelier_products', JSON.stringify([newProd, ...products]));
     } catch (error) {
       console.error('Failed to add product:', error);
     }
@@ -287,8 +271,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const updated = await updateProduct(id, product);
       setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
-      const latestProducts = products.map(p => p.id === id ? { ...p, ...updated } : p);
-      localStorage.setItem('atelier_products', JSON.stringify(latestProducts));
     } catch (error) {
       console.error('Failed to update product:', error);
     }
@@ -298,8 +280,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       await deleteProduct(id);
       setProducts(prev => prev.filter(p => p.id !== id));
-      const latestProducts = products.filter(p => p.id !== id);
-      localStorage.setItem('atelier_products', JSON.stringify(latestProducts));
     } catch (error) {
       console.error('Failed to delete product:', error);
     }
@@ -307,7 +287,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateProducts = (newProducts: Product[]) => {
     setProducts(newProducts);
-    localStorage.setItem('atelier_products', JSON.stringify(newProducts));
   };
 
   const updateOrderStatus = async (orderId: string, status: Order['status']) => {

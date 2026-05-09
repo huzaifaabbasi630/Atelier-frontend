@@ -19,12 +19,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useAuth();
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>(() => {
-    const savedCart = localStorage.getItem('atelier_cart');
+    const savedCart = sessionStorage.getItem('atelier_cart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
   useEffect(() => {
-    localStorage.setItem('atelier_cart', JSON.stringify(cart));
+    sessionStorage.setItem('atelier_cart', JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (product: Product, quantity: number = 1, selectedSize?: string, selectedColor?: string) => {
